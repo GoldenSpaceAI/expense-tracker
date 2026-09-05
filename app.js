@@ -19,15 +19,12 @@ class ExpenseManager {
     }
 
     loadData() {
-        // Load expenses from localStorage
         const savedExpenses = localStorage.getItem('expenses');
         this.expenses = savedExpenses ? JSON.parse(savedExpenses) : [];
 
-        // Load categories from localStorage
         const savedCategories = localStorage.getItem('categories');
         this.categories = savedCategories ? JSON.parse(savedCategories) : this.getDefaultCategories();
         
-        // Save default categories if none exist
         if (!savedCategories) {
             this.saveData();
         }
@@ -51,43 +48,35 @@ class ExpenseManager {
         ];
     }
 
-    // ==================== EVENT LISTENERS ====================
     setupEventListeners() {
-        // Form submission
         document.getElementById('expenseForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.addExpense();
         });
 
-        // Auto date button
         document.getElementById('autoDateBtn').addEventListener('click', () => {
             this.setDefaultDate();
         });
 
-        // Category form
         document.getElementById('newCategoryForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.addCategory();
         });
 
-        // Export button
         document.getElementById('exportBtn').addEventListener('click', () => {
             this.exportToExcel();
         });
 
-        // Time range buttons
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 this.setTimeRange(e.target.dataset.range);
             });
         });
 
-        // Search input
         document.getElementById('searchInput').addEventListener('input', (e) => {
             this.renderExpenses(e.target.value, document.getElementById('filterCategory').value);
         });
 
-        // Filter category
         document.getElementById('filterCategory').addEventListener('change', (e) => {
             this.renderExpenses(document.getElementById('searchInput').value, e.target.value);
         });
@@ -99,7 +88,6 @@ class ExpenseManager {
         document.getElementById('date').value = formattedDate;
     }
 
-    // ==================== EXPENSE OPERATIONS ====================
     addExpense() {
         const amount = parseFloat(document.getElementById('amount').value);
         const categoryId = document.getElementById('category').value;
@@ -130,7 +118,6 @@ class ExpenseManager {
         this.renderExpenses();
         this.updateSummary();
 
-        // Reset form
         document.getElementById('expenseForm').reset();
         this.setDefaultDate();
         document.getElementById('amount').focus();
@@ -152,21 +139,17 @@ class ExpenseManager {
         const expense = this.expenses.find(exp => exp.id === id);
         if (!expense) return;
 
-        // Fill form with expense data
         document.getElementById('amount').value = expense.amount;
         document.getElementById('category').value = expense.categoryId;
         document.getElementById('date').value = expense.date;
         document.getElementById('note').value = expense.note;
 
-        // Change form button to update mode
         const submitBtn = document.querySelector('.btn-add-expense');
         submitBtn.textContent = 'Update Expense';
         submitBtn.dataset.editId = id;
 
-        // Scroll to form
         document.querySelector('.quick-add-card').scrollIntoView({ behavior: 'smooth' });
 
-        // Override form submission for editing
         const form = document.getElementById('expenseForm');
         form.onsubmit = (e) => {
             e.preventDefault();
@@ -198,13 +181,11 @@ class ExpenseManager {
             this.updateSummary();
             this.showToast('Expense updated successfully!', 'success');
 
-            // Reset form
             document.getElementById('expenseForm').reset();
             this.setDefaultDate();
         }
     }
 
-    // ==================== CATEGORY OPERATIONS ====================
     addCategory() {
         const name = document.getElementById('newCategoryName').value.trim();
         const color = document.getElementById('newCategoryColor').value;
@@ -220,7 +201,6 @@ class ExpenseManager {
             color: color
         };
 
-        // Check for duplicates
         if (this.categories.some(cat => cat.id === category.id)) {
             this.showToast('Category already exists', 'error');
             return;
@@ -232,7 +212,6 @@ class ExpenseManager {
         this.populateFilterCategories();
         this.updateCategorySelect();
 
-        // Reset form
         document.getElementById('newCategoryForm').reset();
         document.getElementById('newCategoryColor').value = '#4F46E5';
 
@@ -240,7 +219,6 @@ class ExpenseManager {
     }
 
     deleteCategory(id) {
-        // Check if category has expenses
         const hasExpenses = this.expenses.some(expense => expense.categoryId === id);
         
         if (hasExpenses) {
@@ -259,7 +237,6 @@ class ExpenseManager {
         this.showToast('Category deleted', 'success');
     }
 
-    // ==================== RENDERING ====================
     renderCategories() {
         const categoryList = document.getElementById('categoryList');
         categoryList.innerHTML = '';
@@ -275,7 +252,6 @@ class ExpenseManager {
                 <span class="delete-category" onclick="manager.deleteCategory('${category.id}')">×</span>
             `;
             
-            // Make entire category clickable for editing
             categoryElement.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('delete-category')) {
                     this.editCategory(category.id);
@@ -296,7 +272,6 @@ class ExpenseManager {
             category.name = newName.trim();
             category.id = newName.trim().toLowerCase().replace(/\s+/g, '-');
             
-            // Update expenses with old category id
             this.expenses.forEach(expense => {
                 if (expense.categoryId === oldId) {
                     expense.categoryId = category.id;
@@ -346,7 +321,6 @@ class ExpenseManager {
         
         let filteredExpenses = this.filterExpensesByTimeRange(this.expenses, this.currentFilter);
         
-        // Apply search filter
         if (searchTerm) {
             filteredExpenses = filteredExpenses.filter(expense => 
                 expense.note.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -354,14 +328,12 @@ class ExpenseManager {
             );
         }
         
-        // Apply category filter
         if (filterCategory !== 'all') {
             filteredExpenses = filteredExpenses.filter(expense => 
                 expense.categoryId === filterCategory
             );
         }
 
-        // Sort by date (newest first)
         filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         tableBody.innerHTML = '';
@@ -408,32 +380,26 @@ class ExpenseManager {
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
         
-        // Calculate today's total
         const todayExpenses = this.expenses.filter(expense => expense.date === todayStr);
         document.getElementById('todayTotal').textContent = 
             `$${this.calculateTotal(todayExpenses).toFixed(2)}`;
 
-        // Calculate this month's total
         const monthExpenses = this.filterExpensesByTimeRange(this.expenses, 'month');
         document.getElementById('monthTotal').textContent = 
             `$${this.calculateTotal(monthExpenses).toFixed(2)}`;
 
-        // Calculate last month's total
         const lastMonthExpenses = this.getLastMonthExpenses();
         document.getElementById('lastMonthTotal').textContent = 
             `$${this.calculateTotal(lastMonthExpenses).toFixed(2)}`;
 
-        // Calculate this year's total
         const yearExpenses = this.filterExpensesByTimeRange(this.expenses, 'year');
         document.getElementById('yearTotal').textContent = 
             `$${this.calculateTotal(yearExpenses).toFixed(2)}`;
     }
 
-    // ==================== FILTERING ====================
     setTimeRange(range) {
         this.currentFilter = range;
         
-        // Update button states
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -493,7 +459,6 @@ class ExpenseManager {
         );
     }
 
-    // ==================== UTILITIES ====================
     calculateTotal(expenses) {
         return expenses.reduce((total, expense) => total + expense.amount, 0);
     }
@@ -519,431 +484,464 @@ class ExpenseManager {
         toastMessage.textContent = message;
         toast.className = `toast ${type}`;
         
-        // Show toast
         setTimeout(() => {
             toast.classList.add('show');
         }, 100);
         
-        // Hide toast after 3 seconds
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
     }
 
-    // ==================== ENHANCED EXCEL EXPORT ====================
-    exportToExcel() {
+    // ==================== ULTIMATE EXCEL EXPORT ====================
+    async exportToExcel() {
         try {
-            const wb = XLSX.utils.book_new();
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'ExpenseTracker Pro';
+            workbook.created = new Date();
             
-            // ==================== 1. SUMMARY SHEET ====================
-            const summaryData = this.prepareEnhancedSummaryData();
-            const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+            // ==================== 1. DASHBOARD SHEET ====================
+            const dashboardSheet = workbook.addWorksheet('Dashboard', {
+                views: [{ state: 'frozen', ySplit: 0 }]
+            });
             
             // Set column widths
-            summaryWs['!cols'] = [
-                { wch: 30 },
-                { wch: 20 },
-                { wch: 20 },
-                { wch: 20 }
+            dashboardSheet.columns = [
+                { width: 30 },
+                { width: 20 },
+                { width: 20 },
+                { width: 20 }
             ];
             
-            // Style title
-            summaryWs['A1'].s = {
-                font: { bold: true, size: 18, color: { rgb: "4F46E5" } },
-                fill: { fgColor: { rgb: "EEF2FF" } },
-                alignment: { horizontal: "center", vertical: "center" }
-            };
+            // Title
+            dashboardSheet.mergeCells('A1:D1');
+            const titleCell = dashboardSheet.getCell('A1');
+            titleCell.value = '💰 EXPENSE TRACKER - FINANCIAL REPORT';
+            titleCell.font = { bold: true, size: 20, color: { argb: 'FFFFFFFF' } };
+            titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            dashboardSheet.getRow(1).height = 50;
             
-            // Merge title cells
-            summaryWs['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }
+            // Subtitle
+            dashboardSheet.mergeCells('A2:D2');
+            const subtitleCell = dashboardSheet.getCell('A2');
+            subtitleCell.value = `Generated on ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+            subtitleCell.font = { italic: true, size: 11, color: { argb: 'FF6B7280' } };
+            subtitleCell.alignment = { horizontal: 'center' };
+            
+            // Summary Cards Row
+            const stats = this.getStatistics();
+            const cardData = [
+                ['Today', stats.today, 'success'],
+                ['This Month', stats.month, 'primary'],
+                ['Last Month', stats.lastMonth, 'warning'],
+                ['This Year', stats.year, 'info']
             ];
             
-            // Style header row (row 4)
-            for (let col = 0; col < 4; col++) {
-                const cellRef = XLSX.utils.encode_cell({ r: 3, c: col });
-                if (summaryWs[cellRef]) {
-                    summaryWs[cellRef].s = {
-                        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-                        fill: { fgColor: { rgb: "4F46E5" } },
-                        alignment: { horizontal: "center", vertical: "center" },
-                        border: {
-                            top: { style: "thin", color: { rgb: "4F46E5" } },
-                            bottom: { style: "thin", color: { rgb: "4F46E5" } }
-                        }
-                    };
-                }
-            }
+            let row = 4;
+            cardData.forEach(([label, value, color]) => {
+                dashboardSheet.mergeCells(`A${row}:D${row}`);
+                const cell = dashboardSheet.getCell(`A${row}`);
+                cell.value = `${label}: $${value.toFixed(2)}`;
+                cell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+                
+                const colors = {
+                    success: 'FF10B981',
+                    primary: 'FF4F46E5',
+                    warning: 'FFF59E0B',
+                    info: 'FF3B82F6'
+                };
+                
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors[color] } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                dashboardSheet.getRow(row).height = 35;
+                row++;
+            });
             
-            // Style data rows
-            for (let row = 4; row < summaryData.length; row++) {
-                for (let col = 0; col < 4; col++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-                    if (summaryWs[cellRef]) {
-                        summaryWs[cellRef].s = {
-                            alignment: { horizontal: col === 0 ? "left" : "center" },
-                            border: {
-                                bottom: { style: "thin", color: { rgb: "E5E7EB" } }
-                            }
-                        };
-                        if (col === 1 || col === 2 || col === 3) {
-                            summaryWs[cellRef].s.font = { bold: true };
-                        }
-                    }
-                }
-            }
+            // Key Statistics
+            row += 1;
+            dashboardSheet.mergeCells(`A${row}:D${row}`);
+            dashboardSheet.getCell(`A${row}`).value = '📊 KEY STATISTICS';
+            dashboardSheet.getCell(`A${row}`).font = { bold: true, size: 16, color: { argb: 'FF4F46E5' } };
+            row++;
             
-            XLSX.utils.book_append_sheet(wb, summaryWs, '📊 Summary');
+            const keyStats = [
+                ['Total Transactions', stats.totalTransactions],
+                ['Daily Average (This Month)', `$${stats.dailyAverage.toFixed(2)}`],
+                ['Average per Transaction', `$${stats.avgPerTransaction.toFixed(2)}`],
+                ['Highest Spending Day', stats.highestDay ? `${stats.highestDay.date} ($${stats.highestDay.amount.toFixed(2)})` : 'N/A'],
+                ['Most Used Category', stats.mostUsedCategory || 'N/A'],
+                ['Active Days', stats.activeDays]
+            ];
+            
+            keyStats.forEach(([label, value]) => {
+                dashboardSheet.getCell(`A${row}`).value = label;
+                dashboardSheet.getCell(`A${row}`).font = { bold: true };
+                dashboardSheet.getCell(`B${row}`).value = value;
+                dashboardSheet.mergeCells(`B${row}:D${row}`);
+                row++;
+            });
             
             // ==================== 2. EXPENSES SHEET ====================
-            const expensesData = this.prepareEnhancedExpensesData();
-            const expensesWs = XLSX.utils.aoa_to_sheet(expensesData);
+            const expensesSheet = workbook.addWorksheet('Expenses', {
+                views: [{ state: 'frozen', ySplit: 1 }]
+            });
             
-            expensesWs['!cols'] = [
-                { wch: 15 },
-                { wch: 20 },
-                { wch: 35 },
-                { wch: 15 },
-                { wch: 15 },
-                { wch: 25 }
+            expensesSheet.columns = [
+                { header: 'Date', key: 'date', width: 15 },
+                { header: 'Category', key: 'category', width: 20 },
+                { header: 'Note', key: 'note', width: 35 },
+                { header: 'Amount', key: 'amount', width: 15 },
+                { header: 'Day of Week', key: 'day', width: 15 },
+                { header: 'Created At', key: 'created', width: 25 }
             ];
             
             // Style header row
-            for (let col = 0; col < 6; col++) {
-                const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
-                if (expensesWs[cellRef]) {
-                    expensesWs[cellRef].s = {
-                        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-                        fill: { fgColor: { rgb: "4F46E5" } },
-                        alignment: { horizontal: "center", vertical: "center" },
-                        border: {
-                            bottom: { style: "medium", color: { rgb: "4F46E5" } }
-                        }
-                    };
-                }
-            }
+            const headerRow = expensesSheet.getRow(1);
+            headerRow.height = 30;
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = {
+                    bottom: { style: 'thick', color: { argb: 'FF312E81' } }
+                };
+            });
             
-            // Style data rows with category colors
-            for (let row = 1; row < expensesData.length; row++) {
-                const categoryName = expensesData[row][1];
-                const category = this.categories.find(cat => cat.name === categoryName);
+            // Add auto filter
+            expensesSheet.autoFilter = {
+                from: 'A1',
+                to: 'F1'
+            };
+            
+            // Add data
+            const sortedExpenses = [...this.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            
+            sortedExpenses.forEach((expense, index) => {
+                const category = this.categories.find(cat => cat.id === expense.categoryId);
+                const rowNum = index + 2;
+                
+                expensesSheet.addRow({
+                    date: expense.date,
+                    category: category ? category.name : expense.categoryId,
+                    note: expense.note || '-',
+                    amount: expense.amount,
+                    day: days[new Date(expense.date).getDay()],
+                    created: new Date(expense.createdAt).toLocaleString()
+                });
+                
+                const row = expensesSheet.getRow(rowNum);
                 
                 // Alternate row colors
-                const rowColor = row % 2 === 0 ? "F9FAFB" : "FFFFFF";
-                
-                for (let col = 0; col < 6; col++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-                    if (expensesWs[cellRef]) {
-                        expensesWs[cellRef].s = {
-                            fill: { fgColor: { rgb: rowColor } },
-                            border: {
-                                bottom: { style: "thin", color: { rgb: "E5E7EB" } }
-                            }
-                        };
-                        
-                        // Style category cell with color
-                        if (col === 1 && category) {
-                            expensesWs[cellRef].s = {
-                                fill: { fgColor: { rgb: category.color.replace('#', '') } },
-                                font: { color: { rgb: "FFFFFF" }, bold: true },
-                                alignment: { horizontal: "center" }
-                            };
-                        }
-                        
-                        // Style amount cell
-                        if (col === 3) {
-                            expensesWs[cellRef].s.alignment = { horizontal: "right" };
-                            expensesWs[cellRef].s.font = { bold: true };
-                        }
-                    }
+                if (index % 2 === 0) {
+                    row.eachCell((cell) => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+                    });
                 }
-            }
-            
-            // Freeze header row
-            expensesWs['!freeze'] = { xSplit: 0, ySplit: 1 };
-            
-            XLSX.utils.book_append_sheet(wb, expensesWs, '💰 Expenses');
+                
+                // Style category cell with color
+                if (category) {
+                    const categoryCell = row.getCell(2);
+                    categoryCell.fill = { 
+                        type: 'pattern', 
+                        pattern: 'solid', 
+                        fgColor: { argb: 'FF' + category.color.replace('#', '') } 
+                    };
+                    categoryCell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    categoryCell.alignment = { horizontal: 'center' };
+                }
+                
+                // Style amount cell
+                const amountCell = row.getCell(4);
+                amountCell.numFmt = '"$"#,##0.00';
+                amountCell.font = { bold: true };
+                amountCell.alignment = { horizontal: 'right' };
+            });
             
             // ==================== 3. CATEGORY SUMMARY SHEET ====================
-            const categoryData = this.prepareEnhancedCategoryData();
-            const categoryWs = XLSX.utils.aoa_to_sheet(categoryData);
+            const categorySheet = workbook.addWorksheet('Category Summary', {
+                views: [{ state: 'frozen', ySplit: 1 }]
+            });
             
-            categoryWs['!cols'] = [
-                { wch: 20 },
-                { wch: 20 },
-                { wch: 15 },
-                { wch: 20 },
-                { wch: 15 },
-                { wch: 30 }
+            categorySheet.columns = [
+                { header: 'Category', key: 'category', width: 25 },
+                { header: 'Total Amount', key: 'total', width: 18 },
+                { header: 'Transactions', key: 'count', width: 15 },
+                { header: 'Average', key: 'average', width: 15 },
+                { header: 'Percentage', key: 'percentage', width: 15 },
+                { header: 'Distribution', key: 'distribution', width: 40 }
             ];
             
-            // Style header row
-            for (let col = 0; col < 6; col++) {
-                const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
-                if (categoryWs[cellRef]) {
-                    categoryWs[cellRef].s = {
-                        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-                        fill: { fgColor: { rgb: "4F46E5" } },
-                        alignment: { horizontal: "center", vertical: "center" }
-                    };
-                }
-            }
+            // Style header
+            const catHeaderRow = categorySheet.getRow(1);
+            catHeaderRow.height = 30;
+            catHeaderRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
             
-            // Style category rows
-            for (let row = 1; row < categoryData.length; row++) {
-                const categoryName = categoryData[row][0];
-                const category = this.categories.find(cat => cat.name === categoryName);
+            const totalExpenses = this.calculateTotal(this.expenses);
+            
+            const categoryStats = this.categories
+                .map(category => {
+                    const categoryExpenses = this.expenses.filter(expense => expense.categoryId === category.id);
+                    const total = this.calculateTotal(categoryExpenses);
+                    return {
+                        category,
+                        total,
+                        count: categoryExpenses.length,
+                        average: categoryExpenses.length > 0 ? total / categoryExpenses.length : 0,
+                        percentage: totalExpenses > 0 ? (total / totalExpenses) * 100 : 0
+                    };
+                })
+                .filter(stat => stat.count > 0)
+                .sort((a, b) => b.total - a.total);
+            
+            categoryStats.forEach((stat, index) => {
+                const rowNum = index + 2;
+                const row = categorySheet.addRow({
+                    category: stat.category.name,
+                    total: stat.total,
+                    count: stat.count,
+                    average: stat.average,
+                    percentage: stat.percentage / 100,
+                    distribution: ''
+                });
                 
-                for (let col = 0; col < 6; col++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-                    if (categoryWs[cellRef]) {
-                        if (col === 0 && category) {
-                            categoryWs[cellRef].s = {
-                                fill: { fgColor: { rgb: category.color.replace('#', '') } },
-                                font: { color: { rgb: "FFFFFF" }, bold: true }
-                            };
-                        } else {
-                            categoryWs[cellRef].s = {
-                                alignment: { horizontal: col === 5 ? "left" : "center" },
-                                border: {
-                                    bottom: { style: "thin", color: { rgb: "E5E7EB" } }
-                                }
-                            };
-                        }
-                    }
-                }
-            }
+                // Style category name cell
+                const categoryCell = row.getCell(1);
+                categoryCell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF' + stat.category.color.replace('#', '') }
+                };
+                categoryCell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                
+                // Format numbers
+                row.getCell(2).numFmt = '"$"#,##0.00';
+                row.getCell(4).numFmt = '"$"#,##0.00';
+                row.getCell(5).numFmt = '0.0%';
+                
+                // Add visual bar using cell fill
+                const barCell = row.getCell(6);
+                const barLength = Math.round(stat.percentage / 5);
+                barCell.value = '█'.repeat(barLength);
+                barCell.font = { color: { argb: 'FF' + stat.category.color.replace('#', '') }, bold: true };
+                
+                row.height = 25;
+            });
             
-            XLSX.utils.book_append_sheet(wb, categoryWs, '📁 Categories');
+            // Add total row
+            const totalRow = categorySheet.addRow({
+                category: 'TOTAL',
+                total: totalExpenses,
+                count: this.expenses.length,
+                average: totalExpenses / Math.max(this.expenses.length, 1),
+                percentage: 1,
+                distribution: '█'.repeat(20)
+            });
             
-            // ==================== 4. MONTHLY BREAKDOWN SHEET ====================
-            const monthlyData = this.prepareMonthlyBreakdownData();
-            const monthlyWs = XLSX.utils.aoa_to_sheet(monthlyData);
+            totalRow.eachCell((cell) => {
+                cell.font = { bold: true, size: 12 };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+                cell.border = { top: { style: 'double', color: { argb: 'FF4F46E5' } } };
+            });
+            totalRow.getCell(2).numFmt = '"$"#,##0.00';
+            totalRow.getCell(4).numFmt = '"$"#,##0.00';
+            totalRow.getCell(5).numFmt = '0.0%';
             
-            monthlyWs['!cols'] = [
-                { wch: 15 },
-                { wch: 20 },
-                { wch: 15 },
-                { wch: 20 },
-                { wch: 40 }
+            // ==================== 4. MONTHLY TRENDS SHEET ====================
+            const monthlySheet = workbook.addWorksheet('Monthly Trends', {
+                views: [{ state: 'frozen', ySplit: 1 }]
+            });
+            
+            monthlySheet.columns = [
+                { header: 'Month', key: 'month', width: 20 },
+                { header: 'Total', key: 'total', width: 15 },
+                { header: 'Transactions', key: 'count', width: 15 },
+                { header: 'Average', key: 'average', width: 15 },
+                { header: 'Trend', key: 'trend', width: 40 }
             ];
             
-            // Style header row
-            for (let col = 0; col < 5; col++) {
-                const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
-                if (monthlyWs[cellRef]) {
-                    monthlyWs[cellRef].s = {
-                        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-                        fill: { fgColor: { rgb: "4F46E5" } },
-                        alignment: { horizontal: "center", vertical: "center" }
-                    };
-                }
+            // Style header
+            const monthlyHeader = monthlySheet.getRow(1);
+            monthlyHeader.height = 30;
+            monthlyHeader.eachCell((cell) => {
+                cell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+            
+            // Get last 12 months
+            const monthlyData = [];
+            const now = new Date();
+            
+            for (let i = 11; i >= 0; i--) {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const monthKey = monthDate.toISOString().split('T')[0].substring(0, 7);
+                const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                
+                const monthExpenses = this.expenses.filter(expense => expense.date.startsWith(monthKey));
+                monthlyData.push({
+                    name: monthName,
+                    total: this.calculateTotal(monthExpenses),
+                    count: monthExpenses.length
+                });
             }
             
-            // Style monthly data
-            for (let row = 1; row < monthlyData.length; row++) {
-                for (let col = 0; col < 5; col++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-                    if (monthlyWs[cellRef]) {
-                        monthlyWs[cellRef].s = {
-                            border: {
-                                bottom: { style: "thin", color: { rgb: "E5E7EB" } }
-                            },
-                            alignment: { horizontal: col === 4 ? "left" : "center" }
-                        };
-                        if (col === 1) {
-                            monthlyWs[cellRef].s.font = { bold: true };
+            const maxMonthlyTotal = Math.max(...monthlyData.map(d => d.total), 1);
+            
+            monthlyData.forEach((data, index) => {
+                const rowNum = index + 2;
+                const row = monthlySheet.addRow({
+                    month: data.name,
+                    total: data.total,
+                    count: data.count,
+                    average: data.count > 0 ? data.total / data.count : 0,
+                    trend: ''
+                });
+                
+                // Format numbers
+                row.getCell(2).numFmt = '"$"#,##0.00';
+                row.getCell(3).alignment = { horizontal: 'center' };
+                row.getCell(4).numFmt = '"$"#,##0.00';
+                
+                // Add trend bar
+                const barLength = Math.round((data.total / maxMonthlyTotal) * 30);
+                const barCell = row.getCell(5);
+                barCell.value = '█'.repeat(barLength);
+                barCell.font = { color: { argb: 'FF4F46E5' }, bold: true };
+                
+                // Alternate colors
+                if (index % 2 === 0) {
+                    row.eachCell((cell) => {
+                        if (cell.col !== 5) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
                         }
-                    }
+                    });
                 }
-            }
+                
+                row.height = 22;
+            });
             
-            XLSX.utils.book_append_sheet(wb, monthlyWs, '📅 Monthly');
+            // ==================== 5. CHARTS SHEET ====================
+            const chartSheet = workbook.addWorksheet('Charts');
             
-            // Generate filename
-            const date = new Date();
-            const filename = `Expense_Report_${date.toISOString().split('T')[0]}.xlsx`;
+            // Pie Chart for Category Distribution
+            const pieChart = workbook.addWorksheet('Category Chart', {
+                views: [{ showGridLines: false }]
+            });
             
-            // Save file
-            XLSX.writeFile(wb, filename);
+            // Add data for pie chart
+            pieChart.addRow(['Category', 'Amount']);
+            categoryStats.forEach(stat => {
+                pieChart.addRow([stat.category.name, stat.total]);
+            });
             
-            this.showToast('Professional Excel report exported! 📊', 'success');
+            // Create pie chart
+            const pieChartObj = pieChart.addChart('pie', {
+                title: 'Expense Distribution by Category',
+                data: [
+                    {
+                        reference: 'A1:B' + (categoryStats.length + 1),
+                        categories: 'A2:A' + (categoryStats.length + 1),
+                        values: 'B2:B' + (categoryStats.length + 1)
+                    }
+                ],
+                options: {
+                    legend: { position: 'right' },
+                    colors: categoryStats.map(stat => stat.category.color.replace('#', ''))
+                }
+            });
+            
+            // Bar Chart for Monthly Trends
+            const barChartSheet = workbook.addWorksheet('Monthly Chart', {
+                views: [{ showGridLines: false }]
+            });
+            
+            barChartSheet.addRow(['Month', 'Total']);
+            monthlyData.forEach(data => {
+                barChartSheet.addRow([data.name, data.total]);
+            });
+            
+            const barChartObj = barChartSheet.addChart('bar', {
+                title: 'Monthly Spending Trends',
+                data: [
+                    {
+                        reference: 'A1:B' + (monthlyData.length + 1),
+                        categories: 'A2:A' + (monthlyData.length + 1),
+                        values: 'B2:B' + (monthlyData.length + 1)
+                    }
+                ],
+                options: {
+                    legend: { position: 'none' },
+                    colors: ['4F46E5']
+                }
+            });
+            
+            // ==================== SAVE FILE ====================
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { 
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+            link.click();
+            
+            URL.revokeObjectURL(link.href);
+            
+            this.showToast('Professional Excel report with charts exported! 📊', 'success');
         } catch (error) {
             console.error('Export error:', error);
-            this.showToast('Error exporting Excel file', 'error');
+            this.showToast('Error exporting Excel file: ' + error.message, 'error');
         }
     }
 
-    prepareEnhancedSummaryData() {
-        const allExpenses = this.expenses;
-        const monthExpenses = this.filterExpensesByTimeRange(allExpenses, 'month');
-        const yearExpenses = this.filterExpensesByTimeRange(allExpenses, 'year');
+    getStatistics() {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const todayExpenses = this.expenses.filter(e => e.date === todayStr);
+        const monthExpenses = this.filterExpensesByTimeRange(this.expenses, 'month');
         const lastMonthExpenses = this.getLastMonthExpenses();
+        const yearExpenses = this.filterExpensesByTimeRange(this.expenses, 'year');
         
-        const totalAll = this.calculateTotal(allExpenses);
-        const totalMonth = this.calculateTotal(monthExpenses);
-        const totalYear = this.calculateTotal(yearExpenses);
-        const totalLastMonth = this.calculateTotal(lastMonthExpenses);
-        
-        const avgPerDay = totalMonth / new Date().getDate();
-        const avgPerTransaction = allExpenses.length > 0 ? totalAll / allExpenses.length : 0;
-        
-        // Find highest spending day
+        // Daily totals for highest spending day
         const dailyTotals = {};
-        allExpenses.forEach(expense => {
+        this.expenses.forEach(expense => {
             dailyTotals[expense.date] = (dailyTotals[expense.date] || 0) + expense.amount;
         });
-        const highestDay = Object.entries(dailyTotals).sort((a, b) => b[1] - a[1])[0];
         
-        // Find most used category
+        const highestDay = Object.entries(dailyTotals)
+            .sort((a, b) => b[1] - a[1])[0];
+        
+        // Most used category
         const categoryUsage = {};
-        allExpenses.forEach(expense => {
+        this.expenses.forEach(expense => {
             categoryUsage[expense.categoryId] = (categoryUsage[expense.categoryId] || 0) + 1;
         });
-        const mostUsedCategory = Object.entries(categoryUsage).sort((a, b) => b[1] - a[1])[0];
         
-        return [
-            ['📊 EXPENSE REPORT SUMMARY'],
-            ['Generated:', new Date().toLocaleString(), '', ''],
-            ['', '', '', ''],
-            ['Period', 'Total Amount', 'Transactions', 'Average'],
-            ['Today', `$${this.calculateTotal(allExpenses.filter(e => e.date === new Date().toISOString().split('T')[0])).toFixed(2)}`, 
-             allExpenses.filter(e => e.date === new Date().toISOString().split('T')[0]).length, 
-             `$${(this.calculateTotal(allExpenses.filter(e => e.date === new Date().toISOString().split('T')[0])) / Math.max(allExpenses.filter(e => e.date === new Date().toISOString().split('T')[0]).length, 1)).toFixed(2)}`],
-            ['This Month', `$${totalMonth.toFixed(2)}`, monthExpenses.length, `$${(totalMonth / Math.max(monthExpenses.length, 1)).toFixed(2)}`],
-            ['Last Month', `$${totalLastMonth.toFixed(2)}`, lastMonthExpenses.length, `$${(totalLastMonth / Math.max(lastMonthExpenses.length, 1)).toFixed(2)}`],
-            ['This Year', `$${totalYear.toFixed(2)}`, yearExpenses.length, `$${(totalYear / Math.max(yearExpenses.length, 1)).toFixed(2)}`],
-            ['All Time', `$${totalAll.toFixed(2)}`, allExpenses.length, `$${avgPerTransaction.toFixed(2)}`],
-            ['', '', '', ''],
-            ['📈 KEY STATISTICS', '', '', ''],
-            ['Daily Average (This Month)', `$${avgPerDay.toFixed(2)}`, '', ''],
-            ['Highest Spending Day', highestDay ? `${highestDay[0]} ($${highestDay[1].toFixed(2)})` : 'N/A', '', ''],
-            ['Most Used Category', mostUsedCategory ? this.getCategoryName(mostUsedCategory[0]) : 'N/A', '', ''],
-            ['Total Categories', this.categories.length, '', ''],
-            ['Active Days', Object.keys(dailyTotals).length, '', '']
-        ];
-    }
-
-    prepareEnhancedExpensesData() {
-        const data = [
-            ['Date', 'Category', 'Note', 'Amount', 'Day of Week', 'Created At']
-        ];
+        const mostUsedCategory = Object.entries(categoryUsage)
+            .sort((a, b) => b[1] - a[1])[0];
         
-        const sortedExpenses = [...this.expenses].sort((a, b) => 
-            new Date(b.date) - new Date(a.date)
-        );
+        const totalAll = this.calculateTotal(this.expenses);
         
-        sortedExpenses.forEach(expense => {
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const dayOfWeek = days[new Date(expense.date).getDay()];
-            
-            data.push([
-                expense.date,
-                this.getCategoryName(expense.categoryId),
-                expense.note || '-',
-                `$${expense.amount.toFixed(2)}`,
-                dayOfWeek,
-                new Date(expense.createdAt).toLocaleString()
-            ]);
-        });
-        
-        return data;
-    }
-
-    prepareEnhancedCategoryData() {
-        const data = [
-            ['Category', 'Total Amount', 'Transactions', 'Average', 'Percentage', 'Visual']
-        ];
-        
-        const totalExpenses = this.calculateTotal(this.expenses);
-        
-        // Sort categories by total amount
-        const categoryStats = this.categories
-            .map(category => {
-                const categoryExpenses = this.expenses.filter(expense => 
-                    expense.categoryId === category.id
-                );
-                const total = this.calculateTotal(categoryExpenses);
-                return {
-                    category,
-                    total,
-                    count: categoryExpenses.length,
-                    average: categoryExpenses.length > 0 ? total / categoryExpenses.length : 0,
-                    percentage: totalExpenses > 0 ? (total / totalExpenses) * 100 : 0
-                };
-            })
-            .filter(stat => stat.count > 0)
-            .sort((a, b) => b.total - a.total);
-        
-        categoryStats.forEach(stat => {
-            const barLength = Math.round(stat.percentage / 5); // 20 blocks max
-            const bar = '█'.repeat(barLength) + '░'.repeat(20 - barLength);
-            
-            data.push([
-                stat.category.name,
-                `$${stat.total.toFixed(2)}`,
-                stat.count,
-                `$${stat.average.toFixed(2)}`,
-                `${stat.percentage.toFixed(1)}%`,
-                bar
-            ]);
-        });
-        
-        // Add total row
-        data.push([
-            'TOTAL',
-            `$${totalExpenses.toFixed(2)}`,
-            this.expenses.length,
-            `$${(totalExpenses / Math.max(this.expenses.length, 1)).toFixed(2)}`,
-            '100%',
-            '█'.repeat(20)
-        ]);
-        
-        return data;
-    }
-
-    prepareMonthlyBreakdownData() {
-        const data = [
-            ['Month', 'Total', 'Transactions', 'Average', 'Trend']
-        ];
-        
-        // Get last 12 months
-        const monthlyStats = {};
-        const now = new Date();
-        
-        for (let i = 11; i >= 0; i--) {
-            const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const monthKey = monthDate.toISOString().split('T')[0].substring(0, 7);
-            const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            
-            const monthExpenses = this.expenses.filter(expense => 
-                expense.date.startsWith(monthKey)
-            );
-            
-            monthlyStats[monthKey] = {
-                name: monthName,
-                total: this.calculateTotal(monthExpenses),
-                count: monthExpenses.length
-            };
-        }
-        
-        // Find max total for scaling
-        const maxTotal = Math.max(...Object.values(monthlyStats).map(stat => stat.total), 1);
-        
-        Object.values(monthlyStats).forEach(stat => {
-            const barLength = Math.round((stat.total / maxTotal) * 30);
-            const bar = '█'.repeat(barLength);
-            
-            data.push([
-                stat.name,
-                `$${stat.total.toFixed(2)}`,
-                stat.count,
-                `$${(stat.total / Math.max(stat.count, 1)).toFixed(2)}`,
-                bar
-            ]);
-        });
-        
-        return data;
+        return {
+            today: this.calculateTotal(todayExpenses),
+            month: this.calculateTotal(monthExpenses),
+            lastMonth: this.calculateTotal(lastMonthExpenses),
+            year: this.calculateTotal(yearExpenses),
+            totalTransactions: this.expenses.length,
+            dailyAverage: this.calculateTotal(monthExpenses) / new Date().getDate(),
+            avgPerTransaction: totalAll / Math.max(this.expenses.length, 1),
+            highestDay: highestDay ? { date: highestDay[0], amount: highestDay[1] } : null,
+            mostUsedCategory: mostUsedCategory ? this.getCategoryName(mostUsedCategory[0]) : null,
+            activeDays: Object.keys(dailyTotals).length
+        };
     }
 }
 
@@ -954,5 +952,4 @@ document.addEventListener('DOMContentLoaded', () => {
     manager = new ExpenseManager();
 });
 
-// Export for global access
 window.manager = manager;
