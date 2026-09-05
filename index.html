@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpenseTracker Pro - Personal Finance Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#4F46E5"/>
+                    <path d="M16 8L24 12V20L16 24L8 20V12L16 8Z" stroke="white" stroke-width="2"/>
+                </svg>
+                <h1>ExpenseTracker <span>Pro</span></h1>
+            </div>
+            <div class="header-actions">
+                <button id="exportBtn" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 1L12 5H9V11H7V5H4L8 1Z"/>
+                        <path d="M2 14H14V15H2V14Z"/>
+                    </svg>
+                    Export Excel
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Quick Add Section -->
+        <section class="quick-add-section">
+            <div class="container">
+                <div class="quick-add-card">
+                    <h2>Quick Add Expense</h2>
+                    <form id="expenseForm" class="expense-form">
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <div class="input-with-icon">
+                                <span class="currency-symbol">$</span>
+                                <input 
+                                    type="number" 
+                                    id="amount" 
+                                    placeholder="0.00" 
+                                    step="0.01" 
+                                    min="0.01" 
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" required>
+                                <option value="">Select Category</option>
+                                <option value="food">Food & Dining</option>
+                                <option value="transport">Transportation</option>
+                                <option value="utilities">Utilities</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="insurance">Insurance</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <div class="date-input-group">
+                                <input type="date" id="date">
+                                <button type="button" id="autoDateBtn" class="btn-auto-date">
+                                    Auto (Today)
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="note">Note (Optional)</label>
+                            <input type="text" id="note" placeholder="Add a note...">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-add-expense">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <path d="M8 1V15M1 8H15" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Add Expense
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Category Manager -->
+                <div class="category-manager-card">
+                    <h2>Categories</h2>
+                    <div id="categoryList" class="category-list">
+                        <!-- Dynamic categories will be loaded here -->
+                    </div>
+                    <form id="newCategoryForm" class="new-category-form">
+                        <input type="text" id="newCategoryName" placeholder="New category name...">
+                        <input type="color" id="newCategoryColor" value="#4F46E5">
+                        <button type="submit" class="btn btn-secondary">Add</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="summary-section">
+            <div class="container">
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Today</h3>
+                        <p id="todayTotal" class="summary-amount">$0.00</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>This Month</h3>
+                        <p id="monthTotal" class="summary-amount">$0.00</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Last Month</h3>
+                        <p id="lastMonthTotal" class="summary-amount">$0.00</p>
+                    </div>
+                    <div class="summary-card">
+                        <h3>This Year</h3>
+                        <p id="yearTotal" class="summary-amount">$0.00</p>
+                    </div>
+                </div>
+                
+                <!-- Time Range Selector -->
+                <div class="time-range-selector">
+                    <button class="time-btn active" data-range="month">1 Month</button>
+                    <button class="time-btn" data-range="quarter">3 Months</button>
+                    <button class="time-btn" data-range="year">1 Year</button>
+                    <button class="time-btn" data-range="all">All Time</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expenses Table -->
+        <section class="expenses-section">
+            <div class="container">
+                <div class="expenses-header">
+                    <h2>Recent Expenses</h2>
+                    <div class="table-controls">
+                        <input type="text" id="searchInput" placeholder="Search expenses...">
+                        <select id="filterCategory">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="expensesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Note</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTableBody">
+                            <!-- Dynamic rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="emptyState" class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="30" stroke="#E5E7EB" stroke-width="2"/>
+                        <path d="M32 20V36M24 28H40" stroke="#E5E7EB" stroke-width="2"/>
+                    </svg>
+                    <p>No expenses yet. Start tracking your spending!</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
